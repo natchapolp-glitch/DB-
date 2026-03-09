@@ -533,6 +533,37 @@ app.get('/api/dashboard', async (req, res) => {
   }
 });
 
+// ===================== AUTH API =====================
+
+app.post('/api/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: 'กรุณากรอก username และ password' });
+    }
+    const [rows] = await pool.query(
+      'SELECT user_id, username, role FROM users WHERE username = ? AND password = SHA2(?, 256)',
+      [username, password]
+    );
+    if (rows.length === 0) {
+      return res.status(401).json({ error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
+    }
+    res.json({ user: rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ===================== HEALTH CHECK =====================
+app.get('/api/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok' });
+  } catch (err) {
+    res.status(500).json({ status: 'error', error: err.message });
+  }
+});
+
 // ===================== START SERVER =====================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {

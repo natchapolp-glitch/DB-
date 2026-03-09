@@ -12,12 +12,12 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background-color: var(--bg-color);
+      background-color: var(--bg-body);
       margin: 0;
     }
 
     .login-container {
-      background: var(--card-bg);
+      background: var(--bg-card);
       padding: 30px;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -54,7 +54,6 @@
 
     .role-btn-housekeeper:hover {
       background-color: #d97706;
-      /* darker amber */
     }
   </style>
 </head>
@@ -74,23 +73,28 @@
     </div>
     <div class="login-title">เข้าสู่ระบบ Mansion POS</div>
 
-    <!-- แผงเลือก Role แรกเริ่ม (ก่อนกรอกรหัส) -->
+    <!-- แผงเลือก Role แรกเริ่ม -->
     <div id="role-selection">
       <button class="btn btn-primary role-btn" onclick="selectRole('OWNER')">ผู้จัดการ / เจ้าของ</button>
       <button class="btn role-btn role-btn-housekeeper" onclick="selectRole('HOUSEKEEPER')">แม่บ้าน
         (Housekeeper)</button>
     </div>
 
-    <!-- ฟอร์มกรอกรหัสผ่าน (ซ่อนไว้ก่อน) -->
+    <!-- ฟอร์มกรอก username + password -->
     <div id="password-form" style="display:none; text-align: left;">
       <h4 id="login-role-label" style="text-align: center; margin-bottom: 20px;"></h4>
       <div style="margin-bottom: 15px;">
-        <label style="display:block; margin-bottom:5px; font-weight:600; color:var(--text-color);">รหัสผ่าน</label>
+        <label style="display:block; margin-bottom:5px; font-weight:600; color:var(--text-primary);">ชื่อผู้ใช้</label>
+        <input type="text" id="username-input" class="form-input" placeholder="กรอกชื่อผู้ใช้"
+          style="width:100%; box-sizing:border-box;" autocomplete="username">
+      </div>
+      <div style="margin-bottom: 15px;">
+        <label style="display:block; margin-bottom:5px; font-weight:600; color:var(--text-primary);">รหัสผ่าน</label>
         <input type="password" id="password-input" class="form-input" placeholder="กรอกรหัสผ่าน"
-          style="width:100%; box-sizing:border-box;">
+          style="width:100%; box-sizing:border-box;" autocomplete="current-password">
       </div>
       <div style="color:var(--danger); font-size:0.85rem; margin-bottom:15px; text-align:center; display:none;"
-        id="login-error">รหัสผ่านไม่ถูกต้อง</div>
+        id="login-error"></div>
       <button class="btn btn-primary" style="width:100%; margin-bottom:10px;"
         onclick="attemptLogin()">เข้าสู่ระบบ</button>
       <button class="btn btn-secondary" style="width:100%;" onclick="goBack()">กลับไปเลือกสิทธิ์</button>
@@ -100,12 +104,6 @@
   <script>
     let currentSelectingRole = null;
 
-    // รหัสผ่าน (สำหรับ Demo ปกติควรเก็บใน Backend และ Hash ไว้)
-    const PASSWORDS = {
-      'OWNER': 'admin08865',
-      'HOUSEKEEPER': 'maid08865'
-    };
-
     function selectRole(role) {
       currentSelectingRole = role;
       document.getElementById('role-selection').style.display = 'none';
@@ -113,9 +111,10 @@
 
       const label = role === 'OWNER' ? 'เข้าสู่ระบบ: ผู้จัดการ / เจ้าของ' : 'เข้าสู่ระบบ: แม่บ้าน';
       document.getElementById('login-role-label').textContent = label;
+      document.getElementById('username-input').value = '';
       document.getElementById('password-input').value = '';
       document.getElementById('login-error').style.display = 'none';
-      document.getElementById('password-input').focus();
+      document.getElementById('username-input').focus();
     }
 
     function goBack() {
@@ -124,21 +123,53 @@
       document.getElementById('role-selection').style.display = 'block';
     }
 
-    function attemptLogin() {
-      const pwd = document.getElementById('password-input').value;
-      if (pwd === PASSWORDS[currentSelectingRole]) {
-        localStorage.setItem('userRole', currentSelectingRole);
+    async function attemptLogin() {
+      const username = document.getElementById('username-input').value.trim();
+      const password = document.getElementById('password-input').value;
+      const errorEl = document.getElementById('login-error');
+
+      if (!username || !password) {
+        errorEl.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorEl.textContent = data.error || 'เข้าสู่ระบบไม่สำเร็จ';
+          errorEl.style.display = 'block';
+          return;
+        }
+
+        // ตรวจสอบว่า role ตรงกับที่เลือกไว้
+        if (data.user.role !== currentSelectingRole) {
+          errorEl.textContent = 'สิทธิ์ไม่ตรงกับบทบาทที่เลือก';
+          errorEl.style.display = 'block';
+          return;
+        }
+
+        localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('username', data.user.username);
         window.location.href = 'index.html';
-      } else {
-        document.getElementById('login-error').style.display = 'block';
+      } catch (err) {
+        errorEl.textContent = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+        errorEl.style.display = 'block';
       }
     }
 
     // กด Enter ทำงานเหมือนกดปุ่ม "เข้าสู่ระบบ"
     document.getElementById('password-input').addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') {
-        attemptLogin();
-      }
+      if (e.key === 'Enter') attemptLogin();
+    });
+    document.getElementById('username-input').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') document.getElementById('password-input').focus();
     });
 
     // ถ้าเคยล็อกอินมาแล้ว ให้เด้งไปหน้าหลักได้เลย

@@ -111,3 +111,18 @@ INSERT INTO room (room_number, bed_type, price_per_day, status) VALUES
   ('310', 'double', 400.00, 'AVAILABLE'),
   ('311', 'single', 350.00, 'AVAILABLE')
 ON DUPLICATE KEY UPDATE room_number = VALUES(room_number);
+
+-- ----- Users Table (Authentication) -----
+CREATE TABLE IF NOT EXISTS users (
+  user_id    INT AUTO_INCREMENT PRIMARY KEY,
+  username   VARCHAR(50) NOT NULL UNIQUE,
+  password   VARCHAR(255) NOT NULL,
+  role       ENUM('OWNER','HOUSEKEEPER') NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Seed default users (password: admin08865 / maid08865)
+INSERT INTO users (username, password, role) VALUES
+  ('owner', SHA2('admin08865', 256), 'OWNER'),
+  ('maid',  SHA2('maid08865', 256),  'HOUSEKEEPER')
+ON DUPLICATE KEY UPDATE username = VALUES(username);
