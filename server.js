@@ -79,6 +79,16 @@ app.post('/api/guests', async (req, res) => {
     if (existing.length > 0) {
       return res.json({ ...existing[0], returning_customer: true });
     }
+    // เช็ค guest ที่ถูก soft delete — ถ้าเจอ reactivate
+    const [deleted] = await pool.query('SELECT * FROM guest WHERE national_id = ? AND is_active = 0', [national_id]);
+    if (deleted.length > 0) {
+      await pool.query(
+        'UPDATE guest SET first_name=?, last_name=?, phone=?, address=?, is_active=1 WHERE guest_id=?',
+        [first_name, last_name, phone || null, address || null, deleted[0].guest_id]
+      );
+      const [reactivated] = await pool.query('SELECT * FROM guest WHERE guest_id = ?', [deleted[0].guest_id]);
+      return res.json({ ...reactivated[0], returning_customer: true });
+    }
     const [result] = await pool.query(
       'INSERT INTO guest (first_name, last_name, national_id, phone, address) VALUES (?, ?, ?, ?, ?)',
       [first_name, last_name, national_id, phone || null, address || null]
