@@ -9,6 +9,12 @@ let currentPage = 'dashboard';
 let selectedRoom = null;
 let selectedGuestId = null;
 let checkoutStayId = null;
+let userRole = localStorage.getItem('userRole');
+
+// Check authentication
+if (!userRole) {
+  window.location.href = 'login.html';
+}
 
 // ===== Utilities =====
 function formatDate(d) {
@@ -101,6 +107,11 @@ async function apiDelete(url) {
 
 // ===== Navigation =====
 function navigateTo(page) {
+  // Enforce permissions
+  if (userRole === 'HOUSEKEEPER' && page !== 'rooms') {
+    page = 'rooms';
+  }
+
   currentPage = page;
 
   // Update nav
@@ -900,6 +911,11 @@ function closeSidebar() {
   document.body.style.overflow = '';
 }
 
+function logout() {
+  localStorage.removeItem('userRole');
+  window.location.href = 'login.html';
+}
+
 // ===== Event Listeners =====
 document.addEventListener('DOMContentLoaded', () => {
   // Hamburger menu toggle
@@ -982,6 +998,37 @@ document.addEventListener('DOMContentLoaded', () => {
   updateClock();
   setInterval(updateClock, 1000);
 
-  // Initial load
-  loadDashboard();
+  // Role-based UI setup
+  if (userRole === 'HOUSEKEEPER') {
+    // Hide Owner menus
+    document.getElementById('nav-dashboard').style.display = 'none';
+    document.getElementById('nav-guests').style.display = 'none';
+    document.getElementById('nav-checkin').style.display = 'none';
+    document.getElementById('nav-checkout').style.display = 'none';
+    document.getElementById('nav-payments').style.display = 'none';
+    document.getElementById('nav-reports').style.display = 'none';
+    document.querySelectorAll('.nav-section-title').forEach((el, idx) => {
+      if (idx > 0) el.style.display = 'none';
+    });
+
+    // Set Profile UI
+    const roleDisplay = document.getElementById('user-role-display');
+    if (roleDisplay) {
+      roleDisplay.textContent = 'แม่บ้าน';
+      roleDisplay.style.background = 'var(--warning)';
+    }
+
+    // Initial load
+    navigateTo('rooms');
+  } else {
+    // Set Profile UI
+    const roleDisplay = document.getElementById('user-role-display');
+    if (roleDisplay) {
+      roleDisplay.textContent = 'ผู้จัดการ';
+      roleDisplay.style.background = 'var(--primary)';
+    }
+
+    // Initial load
+    navigateTo('dashboard');
+  }
 });

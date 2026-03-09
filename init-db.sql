@@ -2,8 +2,6 @@
 -- Mansion POS System - Database Initialization
 -- =====================================================
 
-USE mansion_pos;
-
 -- ----- Guest Table -----
 CREATE TABLE IF NOT EXISTS guest (
   guest_id    INT AUTO_INCREMENT PRIMARY KEY,
@@ -12,6 +10,7 @@ CREATE TABLE IF NOT EXISTS guest (
   national_id VARCHAR(13) UNIQUE NOT NULL,
   phone       VARCHAR(15),
   address     TEXT,
+  is_active   TINYINT(1) NOT NULL DEFAULT 1,
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;

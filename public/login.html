@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เข้าสู่ระบบ - Mansion POS</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: var(--bg-color);
+      margin: 0;
+    }
+
+    .login-container {
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .login-logo {
+      margin-bottom: 20px;
+      color: var(--primary);
+    }
+
+    .login-title {
+      font-size: 1.5rem;
+      margin-bottom: 30px;
+      font-weight: 600;
+    }
+
+    .role-btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      font-size: 1rem;
+      border-radius: 8px;
+    }
+
+    .role-btn-housekeeper {
+      background-color: var(--warning);
+      color: white;
+      border: none;
+    }
+
+    .role-btn-housekeeper:hover {
+      background-color: #d97706;
+      /* darker amber */
+    }
+  </style>
+</head>
+
+<body>
+  <div class="login-container">
+    <div class="login-logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 21h18" />
+        <path d="M5 21V7l8-4v18" />
+        <path d="M19 21V11l-6-4" />
+        <path d="M9 9h1" />
+        <path d="M9 13h1" />
+        <path d="M9 17h1" />
+      </svg>
+    </div>
+    <div class="login-title">เข้าสู่ระบบ Mansion POS</div>
+
+    <!-- แผงเลือก Role แรกเริ่ม (ก่อนกรอกรหัส) -->
+    <div id="role-selection">
+      <button class="btn btn-primary role-btn" onclick="selectRole('OWNER')">ผู้จัดการ / เจ้าของ</button>
+      <button class="btn role-btn role-btn-housekeeper" onclick="selectRole('HOUSEKEEPER')">แม่บ้าน
+        (Housekeeper)</button>
+    </div>
+
+    <!-- ฟอร์มกรอกรหัสผ่าน (ซ่อนไว้ก่อน) -->
+    <div id="password-form" style="display:none; text-align: left;">
+      <h4 id="login-role-label" style="text-align: center; margin-bottom: 20px;"></h4>
+      <div style="margin-bottom: 15px;">
+        <label style="display:block; margin-bottom:5px; font-weight:600; color:var(--text-color);">รหัสผ่าน</label>
+        <input type="password" id="password-input" class="form-input" placeholder="กรอกรหัสผ่าน"
+          style="width:100%; box-sizing:border-box;">
+      </div>
+      <div style="color:var(--danger); font-size:0.85rem; margin-bottom:15px; text-align:center; display:none;"
+        id="login-error">รหัสผ่านไม่ถูกต้อง</div>
+      <button class="btn btn-primary" style="width:100%; margin-bottom:10px;"
+        onclick="attemptLogin()">เข้าสู่ระบบ</button>
+      <button class="btn btn-secondary" style="width:100%;" onclick="goBack()">กลับไปเลือกสิทธิ์</button>
+    </div>
+
+  </div>
+  <script>
+    let currentSelectingRole = null;
+
+    // รหัสผ่าน (สำหรับ Demo ปกติควรเก็บใน Backend และ Hash ไว้)
+    const PASSWORDS = {
+      'OWNER': 'admin08865',
+      'HOUSEKEEPER': 'maid08865'
+    };
+
+    function selectRole(role) {
+      currentSelectingRole = role;
+      document.getElementById('role-selection').style.display = 'none';
+      document.getElementById('password-form').style.display = 'block';
+
+      const label = role === 'OWNER' ? 'เข้าสู่ระบบ: ผู้จัดการ / เจ้าของ' : 'เข้าสู่ระบบ: แม่บ้าน';
+      document.getElementById('login-role-label').textContent = label;
+      document.getElementById('password-input').value = '';
+      document.getElementById('login-error').style.display = 'none';
+      document.getElementById('password-input').focus();
+    }
+
+    function goBack() {
+      currentSelectingRole = null;
+      document.getElementById('password-form').style.display = 'none';
+      document.getElementById('role-selection').style.display = 'block';
+    }
+
+    function attemptLogin() {
+      const pwd = document.getElementById('password-input').value;
+      if (pwd === PASSWORDS[currentSelectingRole]) {
+        localStorage.setItem('userRole', currentSelectingRole);
+        window.location.href = 'index.html';
+      } else {
+        document.getElementById('login-error').style.display = 'block';
+      }
+    }
+
+    // กด Enter ทำงานเหมือนกดปุ่ม "เข้าสู่ระบบ"
+    document.getElementById('password-input').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        attemptLogin();
+      }
+    });
+
+    // ถ้าเคยล็อกอินมาแล้ว ให้เด้งไปหน้าหลักได้เลย
+    if (localStorage.getItem('userRole')) {
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+
+</html>

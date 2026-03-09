@@ -113,7 +113,12 @@
           </div>
         </div>
         <div style="display:flex; gap:12px; align-items:center;">
-          <span style="font-size:0.85rem; color:var(--text-muted);" id="current-time"></span>
+          <span style="font-size:0.85rem; color:var(--text-muted);" id="current-time" class="hide-mobile"></span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span id="user-role-display"
+              style="padding:4px 8px; border-radius:4px; color:white; font-size:0.8rem; font-weight:600;"></span>
+            <button class="btn btn-sm btn-secondary" onclick="logout()">ออกจากระบบ</button>
+          </div>
         </div>
       </header>
 
